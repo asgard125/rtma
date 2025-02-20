@@ -24,58 +24,64 @@
 <script>
 import {useUserDataStore} from "@/stores/UserDataStore"
 import {useMonitoringDataStore} from '@/stores/MonitoringDataStore'
-import {mapStores, mapState, mapWritableState, mapActions } from "pinia";
 import axios from 'axios'
+import { defineComponent, computed } from 'vue';
+import { useRouter } from 'vue-router';
 
-export default {
-  
+export default defineComponent({
   name: 'MenuHeader',
-  computed: {
-    ...mapStores(useUserDataStore),
-    ...mapStores(useMonitoringDataStore),
-    ...mapState(useUserDataStore, ['userAuthenticated']),
-    ...mapWritableState(useUserDataStore, ['userAuthenticated']),
-    ...mapActions(useMonitoringDataStore, ['sendMessage']),
+  setup() {
+    const router = useRouter();
+    const userDataStore = useUserDataStore();
+    const monitoringDataStore = useMonitoringDataStore();
+
+    // Данные из UserDataStore
+    const userAuthenticated = computed(() => userDataStore.userAuthenticated);
+
+    // Методы из MonitoringDataStore
+    const sendMessage = (message) => monitoringDataStore.sendMessage(message);
+
+    // Методы для навигации и выхода
+    const logoutPush = async () => {
+      try {
+        const response = await axios.post(
+          `${axios.defaults.baseURL}api/token/logout`,
+          {},
+          { withCredentials: true }
+        );
+        if (response.data.status === 'OK') {
+          userDataStore.userAuthenticated = false;
+          await router.push('/');
+          window.location.reload();
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
+    const loginPush = () => router.push('login');
+    const homePush = () => router.push('/');
+    const monitoringPush = () => {
+      router.push('/monitoring');
+      // sendMessage('lsob');
+      // sendMessage('head');
+      // sendMessage('mstd');
+    };
+    const analiticsPush = () => router.push('analitics');
+    const profilePush = () => router.push('profile');
+
+    return {
+      userAuthenticated,
+      logoutPush,
+      loginPush,
+      homePush,
+      monitoringPush,
+      analiticsPush,
+      profilePush,
+      sendMessage,
+    };
   },
-  mounted(){
-    
-  },
-  methods: {
-    logoutPush (){
-      axios.post(axios.defaults.baseURL + "api/token/logout", {}, { withCredentials: true })
-      .then((response) => {
-            if(response.data.status === "OK"){
-              this.userAuthenticated = false
-              this.$router.push("/").then(() => {
-                window.location.reload()
-              });
-            }
-          })
-    },
-    loginPush(){
-      this.$router.push("/login");
-    },
-    homePush(){
-      this.$router.push("/");
-    },
-    monitoringPush(){
-      this.$router.push("/monitoring");
-      // // this.sendMessage('lsob')
-      // // TODO: оставить только lsob
-      // this.sendMessage('head')
-      // this.sendMessage('mstd')
-    },
-    analiticsPush(){
-      this.$router.push("/analitics");
-    },
-    profilePush(){
-      this.$router.push("/profile");
-    },
-  }
-  // props: {
-  //   userAuthorized: Boolean
-  // }
-}
+});
 </script>
   
   <!-- Add "scoped" attribute to limit CSS to this component only -->

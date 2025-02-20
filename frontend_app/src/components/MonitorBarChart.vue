@@ -19,86 +19,110 @@
 import { Chart as ChartJS, Tooltip, Legend, CategoryScale, LinearScale,  BarElement } from 'chart.js'
 import { Bar } from 'vue-chartjs'
 import { computeAvgTotalOutput } from '../utils/prettyMonTable'
+import { defineComponent, computed, ref } from 'vue';
 
 ChartJS.register(Tooltip, Legend, CategoryScale, LinearScale, BarElement)
 
-export default {
+export default defineComponent({
   name: 'MonitorBarChart',
   components: { Bar },
-  props: ['clusterLabel', 'serverData', 'serverFields', 'serverFieldsDataType'],
-  data() {
-    return {
-      inverted: false,
-      chartOptions: {
-         indexAxis: 'x',
-         responsive: true,
-         plugins: {
-            legend: {
-            display: false
-            }
-            }
-         }
-      }
-   },
-  computed: {
-   chartData () {
-        return {datasets: [ { data: Object.values(this.transformData(computeAvgTotalOutput(this.serverFields, this.serverFieldsDataType, this.serverData).avg)),
+  props: {
+    clusterLabel: String,
+    serverData: Array,
+    serverFields: Array,
+    serverFieldsDataType: Object,
+  },
+  setup(props) {
+    const inverted = ref(false);
+    const chartOptions = ref({
+      indexAxis: 'x',
+      responsive: true,
+      plugins: {
+        legend: {
+          display: false,
+        },
+      },
+    });
 
-         backgroundColor: ['#669900', '#ccee66', '#006699', '#3399cc', '#990066', '#cc3399',
-         '#ff6600', '#ffcc00', '#bce3fa', '#cb0b0a'] } ],
+    const chartData = computed(() => ({
+      datasets: [
+        {
+          data: Object.values(transformData(computeAvgTotalOutput(props.serverFields, props.serverFieldsDataType, props.serverData).avg)),
+          backgroundColor: [
+            '#669900',
+            '#ccee66',
+            '#006699',
+            '#3399cc',
+            '#990066',
+            '#cc3399',
+            '#ff6600',
+            '#ffcc00',
+            '#bce3fa',
+            '#cb0b0a',
+          ],
+        },
+      ],
+      labels: Object.keys(transformData(computeAvgTotalOutput(props.serverFields, props.serverFieldsDataType, props.serverData).avg)),
+    }));
 
-         labels: Object.keys(this.transformData(computeAvgTotalOutput(this.serverFields, this.serverFieldsDataType, this.serverData).avg)) }
+    const transformData = (inputData) => {
+      let keys = filterKeys(props.serverFields, inputData);
+      let data = {};
+      for (let key of keys) {
+        data[key] = inputData[key];
       }
-   },
-  methods: {
-   transformData (inputData) {
-      let keys = this.filterKeys(this.serverFields, inputData)
-      let data = {}
-      for (let key of keys){
-         data[key] = inputData[key]
-      }
-      return this.sortData(data)
-   },
-   filterKeys (keys, data) {
-      let newKeys = []
-      for (let key of keys){
-         if (this.serverFieldsDataType[key] != 'hz' && (typeof data[key] === "number" || typeof data[key] === "bigint")){
-            newKeys.push(key)
-         }
-      }
-      return newKeys
-   },
-   getChartDataType () {
-      return this.serverFieldsDataType[this.serverFields[0]]
-   },
-   sortData (data){
-      let newData = {}
+      return sortData(data);
+    };
 
+    const filterKeys = (keys, data) => {
+      let newKeys = [];
+      for (let key of keys) {
+        if (props.serverFieldsDataType[key] !== 'hz' && (typeof data[key] === 'number' || typeof data[key] === 'bigint')) {
+          newKeys.push(key);
+        }
+      }
+      return newKeys;
+    };
+
+    const getChartDataType = () => {
+      return props.serverFieldsDataType[props.serverFields[0]];
+    };
+
+    const sortData = (data) => {
       // Create items array
-      let items = Object.keys(data).map(function(key) {
-      return [key, data[key]];
-      });
+      let items = Object.keys(data).map((key) => [key, data[key]]);
 
       // Sort the array based on the second element
-      items.sort(function(first, second) {
-      return second[1] - first[1];
-      });
+      items.sort((first, second) => second[1] - first[1]);
 
-      for (let i = 0; i < items.length; i++){
-         newData[items[i][0]] = items[i][1]
+      let newData = {};
+      for (let i = 0; i < items.length; i++) {
+        newData[items[i][0]] = items[i][1];
       }
-         return newData
-   },
-   invertChart (){
-      this.inverted = !this.inverted
-      if (this.inverted){
-         this.chartOptions.indexAxis = 'y'
-      } else{
-         this.chartOptions.indexAxis = 'x'
+      return newData;
+    };
+
+    const invertChart = () => {
+      inverted.value = !inverted.value;
+      if (inverted.value) {
+        chartOptions.value.indexAxis = 'y';
+      } else {
+        chartOptions.value.indexAxis = 'x';
       }
-   }
-  }
-}
+    };
+
+    return {
+      chartData,
+      chartOptions,
+      inverted,
+      transformData,
+      filterKeys,
+      getChartDataType,
+      sortData,
+      invertChart,
+    };
+  },
+});
 </script>
    
    

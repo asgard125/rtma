@@ -64,49 +64,78 @@
    
    
 <script>
-import { useMonitoringDataStore } from "@/stores/MonitoringDataStore"
-import { mapStores, mapWritableState } from "pinia";
-import { computeAvgTotalOutput } from '../utils/prettyMonTable'
+import { defineComponent, computed, ref } from 'vue';
+import { useRouter } from 'vue-router';
+import { useMonitoringDataStore } from '@/stores/MonitoringDataStore';
+import { computeAvgTotalOutput } from '../utils/prettyMonTable';
 
-export default {
-   name: "MonitorTable",
-   data() {
-      return {
-         isRendered: false
+export default defineComponent({
+  name: 'MonitorTable',
+  props: {
+    serverTableHeader: Object,
+    serverMsg: Object,
+    extDataOnName: String,
+  },
+  setup(props) {
+    const isRendered = ref(false);
+    const monitoringDataStore = useMonitoringDataStore();
+    const router = useRouter();
+
+    // Компьютеризованное свойство для среднего значения данных
+    const avgTotalData = computed(() =>
+      computeAvgTotalOutput(
+        props.serverTableHeader.fields,
+        props.serverTableHeader.fields_data_type,
+        props.serverMsg
+      )
+    );
+
+    // Свойства из Pinia Store
+    const currBatch = computed({
+      get: () => monitoringDataStore.currBatch,
+      set: (val) => (monitoringDataStore.currBatch = val),
+    });
+    const currLabel = computed({
+      get: () => monitoringDataStore.currLabel,
+      set: (val) => (monitoringDataStore.currLabel = val),
+    });
+
+    // Методы
+    const zebraTableColor = (index) => {
+      if (index % 2) {
+        return '#ECECEC';
+      } else {
+        return '#FFFFFF';
       }
-   },
-   computed: {
-      avgTotalData (){
-       return computeAvgTotalOutput(this.serverTableHeader['fields'], this.serverTableHeader['fields_data_type'], this.serverMsg)
-      },
-      ...mapStores(useMonitoringDataStore),
-      ...mapWritableState(useMonitoringDataStore, ['currBatch', 'currLabel'])
-   },
-   props: ['serverTableHeader', 'serverMsg', 'extDataOnName'],
-   methods: {
-      zebraTableColor(index){
-         if (index % 2){
-            return '#ECECEC'
-         } else {
-            return '#FFFFFF'
-         }
-      },
-      showExtendedData(nodeLabel){
-         this.currLabel = nodeLabel
-         this.$router.push('/monitoring/node')
-      },
-      getIndicatorStyleObject(datatype, data){
-         let styleObject
-         if (datatype === '%'){
-            data = Math.max(data / 100 - 0.25, 0)
-            styleObject = {backgroundColor: `rgba(255, 207, 64, ${data})`}
-         } else {
-            styleObject = {backgroundColor: `rgba(255, 207, 64, 0)`}
-         }
-         return styleObject
+    };
+
+    const showExtendedData = (nodeLabel) => {
+      currLabel.value = nodeLabel;
+      router.push('monitoring/node');
+    };
+
+    const getIndicatorStyleObject = (datatype, data) => {
+      let styleObject;
+      if (datatype === '%') {
+        data = Math.max(data / 100 - 0.25, 0);
+        styleObject = { backgroundColor: `rgba(255, 207, 64, ${data})` };
+      } else {
+        styleObject = { backgroundColor: `rgba(255, 207, 64, 0)` };
       }
-   }
-}
+      return styleObject;
+    };
+
+    return {
+      isRendered,
+      avgTotalData,
+      currBatch,
+      currLabel,
+      zebraTableColor,
+      showExtendedData,
+      getIndicatorStyleObject,
+    };
+  },
+});
 </script>
    
    

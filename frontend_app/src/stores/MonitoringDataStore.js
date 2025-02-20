@@ -11,7 +11,7 @@ import { baseAddr, basePort }  from '../serverConfig'
 //     "mext?BATCH?LABEL" - EXTended Monitoring to machine with LABEL in BATCH
 //     "stop" - stop subscription
 
-const URL = "ws://" + baseAddr + basePort + "/ws"
+const URL = "ws://" + baseAddr + basePort + "/ws/"
 
 export const useMonitoringDataStore = defineStore('monitoringDataStore', {
     state: () => ({
@@ -31,11 +31,9 @@ export const useMonitoringDataStore = defineStore('monitoringDataStore', {
             this.socket = new WebSocket(URL);
             this.connectedToServer = true;
         },
-        sendMessage(){
-          return (msg) => {
+        sendMessage(msg){
+          console.log(msg)
           this.socket.send(msg);
-          // console.log(msg)
-          }
         },
         listenMsg(){
           this.socket.addEventListener("message", (event) => {

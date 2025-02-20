@@ -10,24 +10,26 @@
 </template>
 
 <script>
-import MenuHeader from '@/components/MenuHeader.vue'
-import {useUserDataStore} from "@/stores/UserDataStore"
-import { mapStores, mapState} from "pinia";
+import { defineComponent, computed } from 'vue';
+import { useUserDataStore } from '@/stores/UserDataStore';
+import MenuHeader from '@/components/MenuHeader.vue';
 
-export default {
-    name: "ProfilePage",
-    components: {
-    MenuHeader
+export default defineComponent({
+  name: 'ProfilePage',
+  components: {
+    MenuHeader,
   },
-  computed: {
-    ...mapStores(useUserDataStore),
-    ...mapState(useUserDataStore, ['userProfileData']),
+  setup() {
+    const userDataStore = useUserDataStore();
+
+    // Получение данных профиля из UserDataStore
+    const userProfileData = computed(() => userDataStore.userProfileData);
+
+    return {
+      userProfileData,
+    };
   },
-  mounted() {
-  },
-  methods: {
-  }
-}
+});
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->

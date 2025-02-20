@@ -49,26 +49,31 @@
  </template>
     
     
- <script>
- 
- export default {
-    name: "MonitorTable",
-    data() {
-       return {
-       }
-    },
-    props: ['serverTableHeader', 'serverMsg', 'avgTotalData'],
-    methods: {
-       zebraTableColor(index){
-          if (index % 2){
-             return '#ECECEC'
-          } else {
-             return '#FFFFFF'
-          }
-       }
-    }
- }
- </script>
+    <script>
+    import { defineComponent, toRefs } from "vue";
+    
+    export default defineComponent({
+      name: "MonitorTable",
+      props: ['serverTableHeader', 'serverMsg', 'avgTotalData'],
+      setup(props) {
+        // Преобразуем props в реактивные переменные
+        const { serverTableHeader, serverMsg, avgTotalData } = toRefs(props);
+    
+        // Функция для определения цвета строк (зебра-стиль)
+        const zebraTableColor = (index) => {
+          return index % 2 ? '#ECECEC' : '#FFFFFF';
+        };
+    
+        // Возвращаем данные и методы в шаблон
+        return {
+          serverTableHeader,
+          serverMsg,
+          avgTotalData,
+          zebraTableColor
+        };
+      }
+    });
+    </script>
     
     
  <style>

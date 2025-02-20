@@ -1,13 +1,13 @@
 <template>
     <MenuHeader></MenuHeader>
     <div class="card shadow m-auto" style="width: 25vw;">
-    <button class="btn btn-light text-center" @click="showSpec"><h2>«{{ this.currLabel }}»</h2></button>
+    <button class="btn btn-light text-center" @click="showSpec"><h2>«{{ currLabel }}»</h2></button>
     <template v-if="specVisible">
     <div class="card shadow m-auto" style="width: 25vw;">
           <h4 class="h4 mb-3 fw-normal text-center">INFO</h4>
 
-          <h6 class="h6 mb-3 fw-normal text-center">batch name: {{ this.currBatch }}</h6>
-          <h6 class="h6 mb-3 fw-normal text-center">node name: {{ this.currLabel }}</h6>
+          <h6 class="h6 mb-3 fw-normal text-center">batch name: {{ currBatch }}</h6>
+          <h6 class="h6 mb-3 fw-normal text-center">node name: {{ currLabel }}</h6>
         </div>
     <template v-for="(field, index) in Object.keys(serverMsgSpc)" v-bind:key="index">
         <div class="card shadow m-auto" style="width: 25vw;" v-if="field !== 'header'">
@@ -43,60 +43,54 @@
     </div>
 </template>
 
-<script>
-import MenuHeader from '@/components/MenuHeader.vue'
-import MonitorTable from '@/components/MonitorTable.vue'
-import { useMonitoringDataStore } from "@/stores/MonitoringDataStore"
-import { mapActions, mapStores, mapState } from "pinia";
+<script setup>
+import { ref, computed, onMounted } from 'vue';
+import MenuHeader from '@/components/MenuHeader.vue';
+import MonitorTable from '@/components/MonitorTable.vue';
+import { useMonitoringDataStore } from "@/stores/MonitoringDataStore";
 
-export default {
-    name: "MonitoringNodePage",
-    components: {
-    MenuHeader,
-    MonitorTable
-  },
-  data() {
-    return {
-      specVisible: false,
+const monitoringDataStore = useMonitoringDataStore();
 
-      chartBtnColor: 'blue',
-      tableBtnColor: 'white',
-      currSectionId: 0,
-    }
-  },
-   computed: {
-      ...mapActions(useMonitoringDataStore, ['sendMessage']),
-      ...mapStores(useMonitoringDataStore),
-      ...mapState(useMonitoringDataStore, ['serverTableHeaderExt', 'serverMsgExt', 'serverMsgSpc', 'currBatch', 'currLabel']),
-   },
-   created() {
-    this.sendMessage('spec?' + this.currBatch + '?' + this.currLabel)
-    this.sendMessage('desc?' + this.currBatch + '?' + this.currLabel)
-    this.sendMessage('mext?' + this.currBatch + '?' + this.currLabel)
-  },
-   methods: {
-      formatHeader (headerData, key){
-        let formattedData = {} // new header data formatted to fill the table
+const specVisible = ref(false);
+const currSectionId = ref(0);
 
-        formattedData['clustered_fields'] = [key]
-        formattedData['clustered_fields_span'] = [Object.keys(headerData).length]
-        formattedData['fields'] = Object.keys(headerData);
-        formattedData['fields_data_type'] = headerData;
-        return formattedData
-      }, 
-      showSpec (){
-        this.specVisible = !this.specVisible
-      },
-      getTableNames (){
-        if (this.currSectionId === -1){
-          this.setActiveSectionTable(0)
-        }
-        return Object.keys(this.serverTableHeaderExt)
-      },
-      setActiveSectionTable (index){
-        this.currSectionId = index
-      }
-   }
+const serverTableHeaderExt = computed(() => monitoringDataStore.serverTableHeaderExt);
+const serverMsgExt = computed(() => monitoringDataStore.serverMsgExt);
+const serverMsgSpc = computed(() => monitoringDataStore.serverMsgSpc);
+const currBatch = computed(() => monitoringDataStore.currBatch);
+const currLabel = computed(() => monitoringDataStore.currLabel);
+
+const sendMessage = monitoringDataStore.sendMessage;
+
+onMounted(() => {
+  sendMessage('spec?' + currBatch.value + '?' + currLabel.value);
+  sendMessage('desc?' + currBatch.value + '?' + currLabel.value);
+  sendMessage('mext?' + currBatch.value + '?' + currLabel.value);
+});
+
+function formatHeader(headerData, key) {
+  let formattedData = {}; // new header data formatted to fill the table
+
+  formattedData['clustered_fields'] = [key];
+  formattedData['clustered_fields_span'] = [Object.keys(headerData).length];
+  formattedData['fields'] = Object.keys(headerData);
+  formattedData['fields_data_type'] = headerData;
+  return formattedData;
+}
+
+function showSpec() {
+  specVisible.value = !specVisible.value;
+}
+
+function getTableNames() {
+  if (currSectionId.value === -1) {
+    setActiveSectionTable(0);
+  }
+  return Object.keys(serverTableHeaderExt.value);
+}
+
+function setActiveSectionTable(index) {
+  currSectionId.value = index;
 }
 </script>
 

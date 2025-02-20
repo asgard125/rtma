@@ -16,86 +16,129 @@
    
 
 <script>
-import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js'
-import { Pie } from 'vue-chartjs'
-import { computeAvgTotalOutput } from '../utils/prettyMonTable'
+import { defineComponent, computed, ref } from 'vue';
+import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
+import { Pie } from 'vue-chartjs';
+import { computeAvgTotalOutput } from '../utils/prettyMonTable';
 
-ChartJS.register(ArcElement, Tooltip, Legend)
+ChartJS.register(ArcElement, Tooltip, Legend);
 
-export default {
+export default defineComponent({
   name: 'MonitorPieChart',
   components: { Pie },
-  props: ['clusterLabel', 'serverData', 'serverFields', 'serverFieldsDataType'],
-  data() {
-    return {
-      sliced: false, 
-      chartOptions: {
-        responsive: true,
-        borderAlign: 'center',
-        offset: 0,
-        radius: '70%'
-      }
-    }
+  props: {
+    clusterLabel: String,
+    serverData: Array,
+    serverFields: Array,
+    serverFieldsDataType: Object,
   },
-  computed: {
-   chartData () {
-        return {datasets: [ { data: Object.values(this.transformData(computeAvgTotalOutput(this.serverFields, this.serverFieldsDataType, this.serverData).avg)),
+  setup(props) {
+    const sliced = ref(false);
+    const chartOptions = ref({
+      responsive: true,
+      borderAlign: 'center',
+      offset: 0,
+      radius: '70%',
+    });
 
-         backgroundColor: ['#669900', '#ccee66', '#006699', '#3399cc', '#990066', '#cc3399',
-         '#ff6600', '#ffcc00', '#bce3fa', '#cb0b0a'], } ],
+    const chartData = computed(() => ({
+      datasets: [
+        {
+          data: Object.values(
+            transformData(
+              computeAvgTotalOutput(
+                props.serverFields,
+                props.serverFieldsDataType,
+                props.serverData
+              ).avg
+            )
+          ),
+          backgroundColor: [
+            '#669900',
+            '#ccee66',
+            '#006699',
+            '#3399cc',
+            '#990066',
+            '#cc3399',
+            '#ff6600',
+            '#ffcc00',
+            '#bce3fa',
+            '#cb0b0a',
+          ],
+        },
+      ],
+      labels: Object.keys(
+        transformData(
+          computeAvgTotalOutput(
+            props.serverFields,
+            props.serverFieldsDataType,
+            props.serverData
+          ).avg
+        )
+      ),
+    }));
 
-         labels: Object.keys(this.transformData(computeAvgTotalOutput(this.serverFields, this.serverFieldsDataType, this.serverData).avg)) }
-   }
-   },
-  methods: {
-   transformData (inputData) {
-      let keys = this.filterKeys(this.serverFields, inputData)
-      let data = {}
-      for (let key of keys){
-         data[key] = inputData[key]
+    const transformData = (inputData) => {
+      let keys = filterKeys(props.serverFields, inputData);
+      let data = {};
+      for (let key of keys) {
+        data[key] = inputData[key];
       }
-      return this.sortData(data)
-   },
-   filterKeys (keys, data) {
-      let newKeys = []
-      for (let key of keys){
-         if (this.serverFieldsDataType[key] != 'hz' && (typeof data[key] === "number" || typeof data[key] === "bigint")){
-            newKeys.push(key)
-         }
-      }
-      return newKeys
-   },
-   getChartDataType () {
-      return this.serverFieldsDataType[this.serverFields[0]]
-   },
-   sortData (data){
-      let newData = {}
+      return sortData(data);
+    };
 
+    const filterKeys = (keys, data) => {
+      let newKeys = [];
+      for (let key of keys) {
+        if (
+          props.serverFieldsDataType[key] !== 'hz' &&
+          (typeof data[key] === 'number' || typeof data[key] === 'bigint')
+        ) {
+          newKeys.push(key);
+        }
+      }
+      return newKeys;
+    };
+
+    const getChartDataType = () => {
+      return props.serverFieldsDataType[props.serverFields[0]];
+    };
+
+    const sortData = (data) => {
       // Create items array
-      let items = Object.keys(data).map(function(key) {
-      return [key, data[key]];
-      });
+      let items = Object.keys(data).map((key) => [key, data[key]]);
 
       // Sort the array based on the second element
-      items.sort(function(first, second) {
-      return second[1] - first[1];
-      });
+      items.sort((first, second) => second[1] - first[1]);
 
-      for (let i = 0; i < items.length; i++){
-         newData[items[i][0]] = items[i][1]
+      let newData = {};
+      for (let i = 0; i < items.length; i++) {
+        newData[items[i][0]] = items[i][1];
       }
-         return newData
-   },
-   sliceChart (){
-      this.sliced = !this.sliced
-      if (this.sliced){
-         this.chartOptions.offset = 45
-      } else{
-         this.chartOptions.offset = 0
+      return newData;
+    };
+
+    const sliceChart = () => {
+      sliced.value = !sliced.value;
+      if (sliced.value) {
+        chartOptions.value.offset = 45;
+      } else {
+        chartOptions.value.offset = 0;
       }
-   }
-  }
-}
+    };
+
+    return {
+      chartData,
+      chartOptions,
+      sliced,
+      transformData,
+      filterKeys,
+      getChartDataType,
+      sortData,
+      sliceChart,
+    };
+  },
+});
 </script>
    
    

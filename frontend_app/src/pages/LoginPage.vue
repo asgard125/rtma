@@ -24,50 +24,61 @@
 </template>
 
 <script>
+import { defineComponent, ref, computed } from 'vue';
 import MenuHeader from '@/components/MenuHeader.vue'
 import axios from 'axios'
+import { useRouter } from 'vue-router';
 import {useUserDataStore} from "@/stores/UserDataStore"
-import { mapStores, mapState} from "pinia";
 
-export default {
-    name: "LoginPage",
-    components: {
-    MenuHeader
+export default defineComponent({
+  name: 'LoginPage',
+  components: {
+    MenuHeader,
   },
-  computed: {
-    ...mapStores(useUserDataStore),
-    ...mapState(useUserDataStore, ['userProfileData']),
-  },
-  data() {
-    return {
-      userLogin: "",
-      userPassword: "",
-      errorInfo: ""
-    }
-  },
-  mounted() {
+  setup() {
+    const router = useRouter();
+    const userDataStore = useUserDataStore();
 
-  },
-  methods: {
-    loginBtnFunc: function () {
-        axios
-          .post(axios.defaults.baseURL + "api/token/login", {
-            login: this.userLogin,
-            password: this.userPassword
-          }, { withCredentials: true})
-          .then((response) => {
-            if(response.data.status === "ERROR"){
-                this.errorInfo = response.data.details
-            } else{
-                this.$router.push("/").then(() => {
-                  window.location.reload()
-                }); // TODO: поменять на профиль человека
-            }
-          })
+    // Данные формы входа
+    const userLogin = ref('');
+    const userPassword = ref('');
+    const errorInfo = ref('');
 
+    // Получение данных профиля из UserDataStore
+    const userProfileData = computed(() => userDataStore.userProfileData);
+
+    // Метод для отправки данных входа
+    const loginBtnFunc = async () => {
+      try {
+        const response = await axios.post(
+          `${axios.defaults.baseURL}api/token/login`,
+          {
+            login: userLogin.value,
+            password: userPassword.value,
+          },
+          { withCredentials: true }
+        );
+
+        if (response.data.status === 'ERROR') {
+          errorInfo.value = response.data.details;
+        } else {
+          await router.push('/');
+          window.location.reload();
         }
-    }
-}
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
+    return {
+      userLogin,
+      userPassword,
+      errorInfo,
+      userProfileData,
+      loginBtnFunc,
+    };
+  },
+});
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->

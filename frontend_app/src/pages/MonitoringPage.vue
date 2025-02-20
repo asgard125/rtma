@@ -49,72 +49,92 @@
 </template>
 
 <script>
-import MenuHeader from '@/components/MenuHeader.vue'
-import MonitorTable from '@/components/MonitorTable.vue'
-import MonitorPieChart from '@/components/MonitorPieChart.vue'
-import MonitorBarChart from '@/components/MonitorBarChart.vue'
-import {useMonitoringDataStore} from "@/stores/MonitoringDataStore"
-import { mapActions, mapStores, mapState, mapWritableState } from "pinia";
+import { ref, computed } from 'vue';
+import MenuHeader from '@/components/MenuHeader.vue';
+import MonitorTable from '@/components/MonitorTable.vue';
+import MonitorPieChart from '@/components/MonitorPieChart.vue';
+import MonitorBarChart from '@/components/MonitorBarChart.vue';
+import { useMonitoringDataStore } from "@/stores/MonitoringDataStore";
 
 export default {
-    name: "MonitoringPage",
-    components: {
+  name: "MonitoringPage",
+  components: {
     MenuHeader,
     MonitorTable,
     MonitorPieChart,
     MonitorBarChart
   },
-  data() {
-      return {
-      batchesVisible: false,
-      renderVisible: false,
-      btnActiveColor: '#2F70AF',
-      btnInactiveColor: '#e7d5f9',
-      renderType: "chart", // chart or table
-      chartBtnColor: 'blue',
-      tableBtnColor: 'white',
-      chartType: 'pie' // pie or bar
-      }
-   },
-   computed: {
-      ...mapActions(useMonitoringDataStore, ['sendMessage']),
-      ...mapStores(useMonitoringDataStore),
-      ...mapWritableState(useMonitoringDataStore, ['currBatch', 'currLabel']),
-      ...mapState(useMonitoringDataStore, ['serverTableHeaderStd', 'serverMsgStd', 'avgTotalData', 'serverBatchesList']),
-   },
-   methods: {
-      showBatches() {
-         if (!this.batchesVisible){
-            this.sendMessage('lsob');
-            this.batchesVisible = true
-         }
-      },
-      renderData (batchName){
-         this.sendMessage('head?' + batchName)
-         this.sendMessage('mstd?' + batchName)
-         this.renderVisible = true
-         this.currBatch = batchName
-      },
-      changeRender (type){
-         if (type === 'chart'){
-            this.chartBtnColor = 'blue'
-            this.tableBtnColor = 'white'
-         } else if (type === 'table') {
-            this.tableBtnColor = 'blue'
-            this.chartBtnColor = 'white'
-         }
-         this.renderType = type
-      },
-      changeChart () {
-         if (this.chartType === 'bar') {
-            this.chartType = 'pie'
-         } else if (this.chartType === 'pie'){
-            this.chartType = 'bar'
-         }
-      }
+  setup() {
+    const monitoringDataStore = useMonitoringDataStore();
 
-   }
-}
+    const batchesVisible = ref(false);
+    const renderVisible = ref(false);
+    const btnActiveColor = '#2F70AF';
+    const btnInactiveColor = '#e7d5f9';
+    const renderType = ref("chart"); // chart or table
+    const chartBtnColor = ref('blue');
+    const tableBtnColor = ref('white');
+    const chartType = ref('pie'); // pie or bar
+
+
+    const serverTableHeaderStd = computed(() => monitoringDataStore.serverTableHeaderStd);
+    const serverMsgStd = computed(() => monitoringDataStore.serverMsgStd);
+    const avgTotalData = computed(() => monitoringDataStore.avgTotalData);
+    const serverBatchesList = computed(() => monitoringDataStore.serverBatchesList);
+
+    const showBatches = () => {
+      if (!batchesVisible.value) {
+        monitoringDataStore.sendMessage('lsob');
+        batchesVisible.value = true;
+      }
+    };
+
+    const renderData = (batchName) => {
+      monitoringDataStore.sendMessage('head?' + batchName);
+      monitoringDataStore.sendMessage('mstd?' + batchName);
+      renderVisible.value = true;
+      monitoringDataStore.currBatch = batchName;
+    };
+
+    const changeRender = (type) => {
+      if (type === 'chart') {
+        chartBtnColor.value = 'blue';
+        tableBtnColor.value = 'white';
+      } else if (type === 'table') {
+        tableBtnColor.value = 'blue';
+        chartBtnColor.value = 'white';
+      }
+      renderType.value = type;
+    };
+
+    const changeChart = () => {
+      if (chartType.value === 'bar') {
+        chartType.value = 'pie';
+      } else if (chartType.value === 'pie') {
+        chartType.value = 'bar';
+      }
+    };
+
+    return {
+      batchesVisible,
+      renderVisible,
+      btnActiveColor,
+      btnInactiveColor,
+      renderType,
+      chartBtnColor,
+      tableBtnColor,
+      chartType,
+      serverTableHeaderStd,
+      serverMsgStd,
+      avgTotalData,
+      serverBatchesList,
+      showBatches,
+      renderData,
+      changeRender,
+      changeChart,
+    };
+  }
+};
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->

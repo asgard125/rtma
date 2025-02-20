@@ -4,38 +4,54 @@
 
 <script>
 import axios from 'axios'
+import { defineComponent, computed, watchEffect } from 'vue';
+import { useRouter } from 'vue-router';
 import {useUserDataStore} from "@/stores/UserDataStore"
-import {useMonitoringDataStore} from "@/stores/MonitoringDataStore"
-import { mapWritableState, mapStores, mapState, mapActions } from "pinia";
-import router from './router';
+import {useMonitoringDataStore} from '@/stores/MonitoringDataStore'
 
 
-export default {
+export default defineComponent({
   name: 'App',
-  computed: {
-    ...mapStores(useUserDataStore),
-    ...mapActions(useMonitoringDataStore, ['setSocket', 'listenMsg']),
-    ...mapState(useUserDataStore, ['userAuthenticated']),
-    ...mapWritableState(useUserDataStore, ['userAuthenticated', 'userProfileData']),
+  setup(){
+    const router = useRouter(); // Доступ к роутеру
+    const userDataStore = useUserDataStore(); // Экземпляр UserDataStore
+    const monitoringDataStore = useMonitoringDataStore(); // Экземпляр MonitoringDataStore
+
+    // Переменные из UserDataStore
+    const userAuthenticated = computed(() => userDataStore.userAuthenticated);
+    const userProfileData = computed(() => userDataStore.userProfileData);
+
+    // Методы из MonitoringDataStore
+    const setSocket = () => monitoringDataStore.setSocket();
+    const listenMsg = () => monitoringDataStore.listenMsg();
+
+    // Устанавливаем состояние пользователя при монтировании
+    watchEffect(async () => {
+      try {
+        const response = await axios.get(`${axios.defaults.baseURL}api/check-cookie-login`, { withCredentials: true });
+        
+        if (response.data.status === 'OK') {
+          userDataStore.userAuthenticated = true;
+          userDataStore.userProfileData = response.data.data;
+          setSocket();
+          listenMsg();
+        } else {
+          userDataStore.userAuthenticated = false;
+        }
+      } catch (error) {
+        console.error(error);
+        router.push('login'); // Переход на страницу авторизации при ошибке
+      }
+  });
+
+  return {
+    userAuthenticated,
+      userProfileData,
+      setSocket,
+      listenMsg,
+    };
   },
-  mounted() {
-    axios.get(axios.defaults.baseURL + "api/check-cookie-login", { withCredentials: true })
-    .then((response) => {
-            if(response.data.status === "OK"){
-              this.userAuthenticated = true
-              this.userProfileData = response.data.data
-              this.setSocket;
-              this.listenMsg;
-              
-            } else{
-              this.userAuthenticated = false
-            }
-          }).catch(error => {
-              console.log(error)
-              router.push("login")
-            })
-  }
-}
+});
 </script>
 
 <style>
